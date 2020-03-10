@@ -1,5 +1,8 @@
 package net.encode.wurmesp;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import com.wurmonline.client.renderer.Color;
 import com.wurmonline.client.renderer.PickRenderer;
 import com.wurmonline.client.renderer.PickRenderer.CustomPickFillDepthRender;
@@ -9,12 +12,18 @@ import com.wurmonline.client.renderer.PickableUnit;
 import com.wurmonline.client.renderer.backend.Primitive;
 import com.wurmonline.client.renderer.backend.Queue;
 import com.wurmonline.client.renderer.backend.RenderState;
+import com.wurmonline.client.renderer.cell.CreatureCellRenderable;
+
 import net.encode.wurmesp.WurmEspMod.SEARCHTYPE;
 
 public class Unit {
 	private long id;
 	private String modelName;
 	private String hoverName;
+	private String mColorName;
+	private char mGender;
+	private float mX;
+	private float mY;
 	private PickableUnit pickableUnit;
 	private float[] color = new float[]{0.0f,0.0f,0.0f};
 	private float[] conditionedcolor = new float[]{0.0f,0.0f,0.0f};
@@ -40,6 +49,8 @@ public class Unit {
 	public static float[] colorSlow = {0.0f, 0.0f, 0.0f};
 	public static float[] colorSly = {0.0f, 0.0f, 0.0f};
 	
+	public static Logger logger = Logger.getLogger("UNIT");
+	
 	public static String[] aggroMOBS;
 	
 	public static String[] uniqueMOBS;
@@ -50,12 +61,16 @@ public class Unit {
 	
 	public static String[] conditionedMOBS;
 	
-	public Unit(long id, PickableUnit pickableUnit, String modelName, String hoverName)
+	public Unit(long id, PickableUnit pickableUnit, String modelName, String hoverName, int pX, int pY )
 	{
 		this.id = id;
 		this.pickableUnit = pickableUnit;
 		this.modelName = modelName;
 		this.hoverName = hoverName;
+		this.mColorName = getColorName( modelName );
+		this.mGender = getGender( modelName );
+		this.mX = pX;
+		this.mY = pY;
 		
 		this.determineColor();
 	}
@@ -282,6 +297,139 @@ public class Unit {
 			
 			this.conditionedcolor = color;
 		}
+	}
+	
+	private String getColorName( String pModelName )
+	{
+		String lReturnString = "";
+		if ( pModelName.contains( "horse" ) || pModelName.contains( "foal" ) ) 
+		{
+            if ( pModelName.contains( ".hell" ) ) 
+            {
+                if ( pModelName.contains( ".cinder" ) ) lReturnString = "Cinder";
+                else if ( pModelName.contains( ".envious" ) ) lReturnString = "Envious";
+                else if ( pModelName.contains( ".shadow" ) ) lReturnString = "Shadow";
+                else if ( pModelName.contains( ".pestilential" ) ) lReturnString = "Pestilential";
+                else if ( pModelName.contains( ".nightshade" ) ) lReturnString = "Nightshade";
+                else if ( pModelName.contains( ".incandescent" ) ) lReturnString = "Incandescent";
+                else if ( pModelName.contains( ".molten" ) ) lReturnString = "Molten";
+                else lReturnString= "Ash";
+            }
+            else 
+            {
+                if ( pModelName.contains(".brown" ) ) lReturnString = "Brown";
+                else if ( pModelName.contains( ".skewbaldpinto" ) ) lReturnString = "Skewbald pinto";
+                else if ( pModelName.contains( ".goldbuckskin" ) ) lReturnString = "Gold buckskin";
+                else if ( pModelName.contains( ".blacksilver" ) ) lReturnString = "Black silver";
+                else if ( pModelName.contains( ".appaloosa" ) ) lReturnString = "Appaloosa";
+                else if ( pModelName.contains( ".chestnut" ) ) lReturnString = "Chestnut";
+                else if ( pModelName.contains( ".gold" ) ) lReturnString = "Gold";
+                else if ( pModelName.contains( ".black" ) ) lReturnString = "Black";
+                else if ( pModelName.contains( ".white" ) ) lReturnString = "White";
+                else if ( pModelName.contains( ".piebaldpinto" ) ) lReturnString = "Piebald Pinto";
+                else if ( pModelName.contains( ".bloodbay" ) ) lReturnString = "Blood Bay";
+                else if ( pModelName.contains( ".ebonyblack" ) ) lReturnString = "Ebony";
+                else lReturnString= "Gray";
+            }
+		}
+		else if ( pModelName.contains( "sheep" ) )
+		{
+			if ( pModelName.contains( ".black" ) ) lReturnString = "Black";
+			else lReturnString = "White";
+		}
+		else if ( pModelName.contains( ".hen" ) || pModelName.contains( ".rooster" ) )
+		{
+			if ( pModelName.contains( ".brown" ) ) lReturnString = "Brown";
+			if ( pModelName.contains( ".black" ) ) lReturnString = "Black";
+			else lReturnString = "White";
+		}
+		return lReturnString;
+	}
+	
+	public String getColorName()
+	{
+		return this.mColorName;
+	}
+	
+	private char getGender( String pModelName )
+	{
+		char lReturnChar = 'M';
+		if ( pModelName.contains( "female" ) ) lReturnChar = 'F';
+		return lReturnChar;
+	}
+	
+	public char getGender()
+	{
+		return this.mGender;
+	}
+	
+	public float getX()
+	{
+		return this.mX;
+	}
+	
+	public float getY()
+	{
+		return this.mY;
+	}
+	
+	public CreatureCellRenderable getCCR()
+	{
+		return (CreatureCellRenderable)this.pickableUnit;
+	}
+	
+	public String getAge()
+	{
+		if ( hoverName.startsWith( "Young" ) ) return "Young";
+		else if ( hoverName.startsWith( "Adolescent" ) ) return "Adolescent";
+		else if ( hoverName.startsWith( "Mature" ) ) return "Mature";
+		else if ( hoverName.startsWith( "Aged" ) ) return "Aged";
+		else if ( hoverName.startsWith( "Old" ) ) return "Old";
+		else if ( hoverName.startsWith( "Venerable" ) ) return "Venerable";
+		else return "";
+	}
+	
+	public String getCreature()
+	{
+		String lCreature = "Placeholder";
+		
+		if ( modelName.contains( "quadraped" ) )
+		{
+			lCreature = modelName.substring( 25 );
+			if ( lCreature.contains( "horse.hell" ) )
+			{
+				lCreature = "hell horse";
+			}
+			else
+			{
+				lCreature = lCreature.substring( 0, lCreature.indexOf( "." ) );				
+			}
+		}
+		else if ( modelName.contains( "humanoid" ) )
+		{
+			lCreature = modelName.substring( 24 );
+			lCreature = lCreature.substring( 0, lCreature.indexOf( "." ) );
+		}
+		else if ( modelName.contains( "multiped" ) )
+		{
+			if ( modelName.contains( "spider" ) )
+			{
+				if ( modelName.contains( "huge" ) ) lCreature = "huge spider";
+				if ( modelName.contains( "lava" ) ) lCreature = "lava spider";
+				if ( modelName.contains( "fog" ) ) lCreature = "fog spider";				
+			}
+			else if ( modelName.contains( "scorpion" ) )
+			{
+				if ( modelName.contains( "hell" ) ) lCreature = "hell scorpion";
+				else lCreature = "scorpion";
+			}
+		}
+		
+		if ( lCreature.length() > 0 )
+		{
+			lCreature = lCreature.substring(0, 1).toUpperCase() + lCreature.substring(1);			
+		}
+		return lCreature;
 	}
 	
 	public void renderUnit(Queue queue, boolean showconditioned) {

@@ -118,6 +118,7 @@ public class WurmEspWindow extends WWindow{
 	    	
 	    });
 	    deedCheckBox.checked = WurmEspMod.deedsize;
+
 	  //------------------------------------------
 	    checkboxes.addComponent(playersCheckBox);
 	    checkboxes.addComponent(mobsCheckBox);

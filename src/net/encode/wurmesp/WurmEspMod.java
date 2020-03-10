@@ -28,8 +28,11 @@ import com.wurmonline.client.renderer.PickableUnit;
 import com.wurmonline.client.renderer.backend.Queue;
 import com.wurmonline.client.renderer.cell.CellRenderable;
 import com.wurmonline.client.renderer.cell.CreatureCellRenderable;
+import com.wurmonline.client.renderer.cell.GroundItemCellRenderable;
+import com.wurmonline.client.renderer.gui.CreatureWindow;
 import com.wurmonline.client.renderer.gui.HeadsUpDisplay;
 import com.wurmonline.client.renderer.gui.MainMenu;
+import com.wurmonline.client.renderer.gui.TargetWindow;
 import com.wurmonline.client.renderer.gui.WurmComponent;
 import com.wurmonline.client.renderer.gui.WurmEspWindow;
 import com.wurmonline.client.settings.SavePosManager;
@@ -55,10 +58,12 @@ public class WurmEspMod implements WurmClientMod, Initable, PreInitable, Configu
 	private CronoManager tilesCloseByCronoManager;
 	private CronoManager tilesHighlightCronoManager;
 	private CronoManager tilesCloseByWalkableCronoManager;
+	private LocalCreaturesManager mCreatureCronoManager;
 	private XRayManager xrayManager;
 	private TilesCloseByManager tilesCloseByManager;
 	public static TilesHighlightManager tilesHighlightManager;
 	private TilesWalkableManager tilesCloseByWalkableManager;
+	private CreatureWindow mCreatureWindow;
 	
 	public static CaveDataBuffer _caveBuffer = null;
 	public static NearTerrainDataBuffer _terrainBuffer = null;
@@ -306,6 +311,7 @@ public class WurmEspMod implements WurmClientMod, Initable, PreInitable, Configu
 			tilesCloseByCronoManager = new CronoManager(1000);
 			tilesHighlightCronoManager = new CronoManager(5000);
 			tilesCloseByWalkableCronoManager = new CronoManager(1000);
+			mCreatureCronoManager = new LocalCreaturesManager();
 			
 			ClassPool classPool = HookManager.getInstance().getClassPool();
 
@@ -354,8 +360,28 @@ public class WurmEspMod implements WurmClientMod, Initable, PreInitable, Configu
 								{
 									unit.renderUnit(queuePick, false);
 								}
+								if ( unit.isMob() )
+								{
+						    		logger.log(Level.INFO, "DEBUG CALL UNIT:" + unit.getId());
+									mCreatureWindow.addToLocalCreatureList( unit.getId() , unit.getCreature(), unit.getAge(), unit.getGender(), unit.getColorName(), (int)unit.getX(), (int)unit.getY(), (int)world.getPlayer().getPos().getTileX(), (int)world.getPlayer().getPos().getTileY(), unit.getCCR() );									
+								}
 							}
 						}
+						
+						mCreatureCronoManager._setWW( world, mCreatureWindow );
+						if ( mCreatureCronoManager._first )
+						{
+							mCreatureCronoManager._refreshData();
+							mCreatureCronoManager._first = false;
+						}
+						else if ( mCreatureCronoManager.hasEnded() )
+						{
+							mCreatureCronoManager._refreshData();
+							mCreatureCronoManager.restart(5000);
+						}
+						Thread lCreatureThread = new Thread(() -> {
+							mCreatureCronoManager._refreshData();
+						});
 						
 						if (tileshighlight) {
 							tilesHighlightManager._setWQ(world,queuePick);
@@ -496,7 +522,7 @@ public class WurmEspMod implements WurmClientMod, Initable, PreInitable, Configu
 						
 						PickableUnit pUnit = (PickableUnit) proxy;
 						
-						Unit unit = new Unit(pUnit.getId(), pUnit, ((CreatureCellRenderable)proxy).getModelName().toString(),((CreatureCellRenderable)proxy).getHoverName());
+						Unit unit = new Unit(pUnit.getId(), pUnit, ((CreatureCellRenderable)proxy).getModelName().toString(),((CreatureCellRenderable)proxy).getHoverName(),(int)(((CreatureCellRenderable)proxy).getXPos() / 4 ),(int)(((CreatureCellRenderable)proxy).getYPos() / 4 ) );
 						
 						if (unit.isPlayer() || unit.isMob()) {
 							this.pickableUnits.add(unit);
@@ -558,7 +584,7 @@ public class WurmEspMod implements WurmClientMod, Initable, PreInitable, Configu
 						GroundItemData item = ReflectionUtil.getPrivateField(proxy,
 								ReflectionUtil.getField(cls, "item"));
 						
-						Unit unit = new Unit(item.getId(), pUnit, item.getModelName().toString(),((PickableUnit)proxy).getHoverName());
+						Unit unit = new Unit(item.getId(), pUnit, item.getModelName().toString(),((PickableUnit)proxy).getHoverName(),(int)((GroundItemCellRenderable)proxy).getXPos(),(int)((GroundItemCellRenderable)proxy).getYPos());
 
 						if (unit.isSpecial()) {
 							this.pickableUnits.add(unit);
@@ -667,6 +693,14 @@ public class WurmEspMod implements WurmClientMod, Initable, PreInitable, Configu
 			SavePosManager savePosManager = (SavePosManager) ReflectionUtil.getPrivateField(hud,
 					ReflectionUtil.getField(hud.getClass(), "savePosManager"));
 			savePosManager.registerAndRefresh(wurmEspWindow, "wurmespwindow");
+			
+			TargetWindow lTargetWindow = (TargetWindow) ReflectionUtil.getPrivateField(hud, ReflectionUtil.getField(hud.getClass(), "targetWindow"));
+
+			mCreatureWindow = new CreatureWindow( lTargetWindow );
+			mainMenu.registerComponent( "Local Creatures", mCreatureWindow );
+			components.add( mCreatureWindow );
+			savePosManager.registerAndRefresh( mCreatureWindow, "localcreatureswindow" );
+			
 		} catch (IllegalArgumentException | IllegalAccessException | ClassCastException | NoSuchFieldException e) {
 			throw new RuntimeException(e);
 		}
