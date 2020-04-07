@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.wurmonline.client.game.PlayerPosition;
@@ -39,6 +38,8 @@ public class LocalCreaturesManager
 	
 	public void _refreshData() {
 		PlayerPosition lPos = this._world.getPlayer().getPos();
+		
+		mCreatureWindow.setWorld( _world );
 		
 		int lPX = lPos.getTileX();
 		int lPY = lPos.getTileY();

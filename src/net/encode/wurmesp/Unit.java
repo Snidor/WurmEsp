@@ -24,6 +24,7 @@ public class Unit {
 	private char mGender;
 	private float mX;
 	private float mY;
+	
 	private PickableUnit pickableUnit;
 	private float[] color = new float[]{0.0f,0.0f,0.0f};
 	private float[] conditionedcolor = new float[]{0.0f,0.0f,0.0f};
