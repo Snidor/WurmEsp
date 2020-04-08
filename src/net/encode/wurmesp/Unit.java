@@ -24,6 +24,7 @@ public class Unit {
 	private char mGender;
 	private float mX;
 	private float mY;
+	private Color mColor;
 	
 	private PickableUnit pickableUnit;
 	private float[] color = new float[]{0.0f,0.0f,0.0f};
@@ -72,6 +73,7 @@ public class Unit {
 		this.mGender = getGender( modelName );
 		this.mX = pX;
 		this.mY = pY;
+		this.mColor = Color.WHITE;
 		
 		this.determineColor();
 	}
@@ -218,6 +220,11 @@ public class Unit {
 			}
 		}
 		return false;
+	}
+	
+	public Color getCol()
+	{
+		return mColor;
 	}
 	
 	private void determineColor()
@@ -390,6 +397,18 @@ public class Unit {
 		else return "";
 	}
 	
+	public String getCondition()
+	{
+		if ( this.isConditioned() )
+		{
+			return condition;
+		}
+		else
+		{
+			return " ";
+		}
+	}
+	
 	public String getCreature()
 	{
 		String lCreature = "Placeholder";
@@ -430,6 +449,7 @@ public class Unit {
 		{
 			lCreature = lCreature.substring(0, 1).toUpperCase() + lCreature.substring(1);			
 		}
+		
 		return lCreature;
 	}
 	
@@ -489,5 +509,6 @@ public class Unit {
 	    renderStateFillDepth.customstate = customPickFillDepth;
 	    renderStateFillDepth.depthtest = Primitive.TestFunc.ALWAYS;
 	    this.pickableUnit.renderPicked(queue, renderStateFillDepth, color);
+	    mColor = color;
 	}
 }

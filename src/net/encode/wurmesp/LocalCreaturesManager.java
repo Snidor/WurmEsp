@@ -49,7 +49,8 @@ public class LocalCreaturesManager
 		
 		for ( int i = 0; i < lIdList.size(); i ++ )
 		{
-			if ( ( Math.sqrt( Math.pow( ( lMap.get( lIdList.get( i ) ).mCX - lMap.get( lIdList.get( i ) ).mPX ), 2) ) > 90 ) || ( Math.sqrt( Math.pow( ( lMap.get( lIdList.get( i ) ).mCY - lMap.get( lIdList.get( i ) ).mPY ), 2) ) > 90 ) )
+			if (  ( ( Math.sqrt( Math.pow( ( lMap.get( lIdList.get( i ) ).mCX - lMap.get( lIdList.get( i ) ).mPX ), 2) ) > 90 ) || ( Math.sqrt( Math.pow( ( lMap.get( lIdList.get( i ) ).mCY - lMap.get( lIdList.get( i ) ).mPY ), 2) ) > 90 ) ) ||
+					( _world.getServerConnection().getServerConnectionListener().findCreature( lIdList.get( i ) ) == null ) )
 			{
 				mCreatureWindow.removeEntry( lIdList.get( i ) );
 			}

@@ -7,6 +7,7 @@ import java.util.logging.Logger;
 
 import com.wurmonline.client.GameCrashedException;
 import com.wurmonline.client.game.World;
+import com.wurmonline.client.renderer.Color;
 import com.wurmonline.client.renderer.PickData;
 import com.wurmonline.client.renderer.cell.CreatureCellRenderable;
 
@@ -15,6 +16,7 @@ public class CreatureWindow extends WWindow
     private Map<Long, LocalCreatureTreeListItem> mLocalCreaturesMap;
     private LocalCreatureList mList;
     private TargetWindow mTargetWindow;
+    public static boolean mColoredText = true;
     
     private World mWorld;
     private Map<Long, CreatureCellRenderable> mCreatures;
@@ -25,8 +27,8 @@ public class CreatureWindow extends WWindow
     {
         super( "Local Creature Window" );
         this.setTitle( "Local Creatures" );
-        int[] colWidths = new int[]{ 60, 35, 80, 30, 30};
-        String[] colNames = new String[]{ "Age", "Gender", "Color", "Dir","Dis" };
+        int[] colWidths = new int[]{ 60, 60, 35, 80, 30, 30};
+        String[] colNames = new String[]{ "Condition","Age", "Gender", "Color", "Dir","Dis" };
         this.mLocalCreaturesMap = new HashMap<>();
         this.mList = new LocalCreatureList("Local Creature", colWidths, colNames);
         this.setComponent( this.mList );
@@ -34,17 +36,18 @@ public class CreatureWindow extends WWindow
         this.mTargetWindow = pTargetWindow;
     }
 
-    public void addToLocalCreatureList( long pId, String pName, String pAge, char pGender, String pColor, int pCX, int pCY, int pPX, int pPY, CreatureCellRenderable pCCR ) 
+    public void addToLocalCreatureList( long pId, String pName, String pAge, char pGender, String pColorString, int pCX, int pCY, int pPX, int pPY, CreatureCellRenderable pCCR, Color pColor, String pCondition ) 
     {
+    	
         if ( !this.mLocalCreaturesMap.containsKey( pId ) ) 
         {
-        	LocalCreatureTreeListItem lItem = new LocalCreatureTreeListItem( pId, pName, pAge, pGender, pColor, pCX, pCY, pPX, pPY, pCCR );
+        	LocalCreatureTreeListItem lItem = new LocalCreatureTreeListItem( pId, pName, pAge, pGender, pColorString, pCX, pCY, pPX, pPY, pCCR, pColor, pCondition );
             this.mLocalCreaturesMap.put( pId, lItem );
             this.mList.addTreeListItem(lItem, null);
         }
         else
         {
-        	if (this.mWorld != null)
+        	if ( ( this.mWorld != null ) && ( mWorld.getServerConnection().getServerConnectionListener().getCreatures().get( pId ) != null ) )
         	{
         		this.mList.getNode( mLocalCreaturesMap.get( pId ) ).item.setCX( ( (int)mWorld.getServerConnection().getServerConnectionListener().getCreatures().get( pId ).getXPos() / 4 ) );
         		this.mList.getNode( mLocalCreaturesMap.get( pId ) ).item.setCY( ( (int)mWorld.getServerConnection().getServerConnectionListener().getCreatures().get( pId ).getYPos() / 4 ) );
@@ -55,6 +58,12 @@ public class CreatureWindow extends WWindow
         		this.mLocalCreaturesMap.get( pId ).mPX = ( pPX );
         		this.mLocalCreaturesMap.get( pId ).mPY = ( pPY );
         	}
+        }
+        
+        if ( mColoredText )
+        {
+        	this.mList.getNode( mLocalCreaturesMap.get( pId ) ).item.setCustomColor( pColor.r, pColor.g, pColor.b );
+        	this.mList.getNode( mLocalCreaturesMap.get( pId ) ).item.setCustomSecondaryColor( pColor.r, pColor.g, pColor.b );        	
         }
     }
 
@@ -72,7 +81,6 @@ public class CreatureWindow extends WWindow
             super(_name, colWidths, colNames);
             sortColumn = 1;
             sortOrder = -1;
-
         }	
     	
         @SuppressWarnings("rawtypes")
@@ -125,27 +133,31 @@ public class CreatureWindow extends WWindow
         private final String mName;
         private final String mAge;
         private final String mGender;
-        private final String mColor;
+        private final String mColorString;
+        private final String mCondition;
         private final CreatureCellRenderable mCCR;
+        private Color mColor;
         public int mCX;
         public int mCY;
         public int mPX;
         public int mPY;
+        public int mDistance = 0;
         public String mDirection;
-        public String mDistance = "0";
 
-        LocalCreatureTreeListItem( long pId, String pName, String pAge, char pGender, String pColor, int pCX, int pCY, int pPX, int pPY, CreatureCellRenderable pCCR ) 
+        LocalCreatureTreeListItem( long pId, String pName, String pAge, char pGender, String pColorString, int pCX, int pCY, int pPX, int pPY, CreatureCellRenderable pCCR, Color pColor, String pCondition ) 
         {
             this.mId = pId;
             this.mName = pName;
             this.mAge = pAge;
             this.mGender = Character.toString( pGender );
-            this.mColor = pColor;
+            this.mColorString = pColorString;
             this.mCX = pCX;
             this.mCY = pCY;
             this.mPX = pPX;
             this.mPY = pPY;
             this.mCCR = pCCR;
+            this.mColor = pColor;
+            this.mCondition = pCondition;
         }
 
         String getName() 
@@ -171,19 +183,23 @@ public class CreatureWindow extends WWindow
             	{
             		return mName;
             	}
-                case 0: 
+            	case 0:
+            	{
+            		return mCondition;
+            	}
+                case 1: 
                 {
                     return mAge;
                 }
-                case 1: 
+                case 2: 
                 {
                     return mGender;
                 }
-                case 2: 
-                {
-                    return mColor;
-                }
                 case 3: 
+                {
+                    return mColorString;
+                }
+                case 4: 
                 {
                 	mDirection = "";
                 	boolean lOnPlayer = true;
@@ -214,20 +230,19 @@ public class CreatureWindow extends WWindow
 
                     return mDirection;
                 }
-                case 4:
+                case 5:
                 {
                 	int lX = mCX - mPX;
                 	int lY = mCY - mPY;
                 	if ( ( lX == 0 ) || ( lY == 0 ) )
                 	{
-                		mDistance = Integer.toString( (int)Math.sqrt( Math.pow( ( lX + lY ), 2) ) );
+                		mDistance = (int)Math.sqrt( Math.pow( ( lX + lY ), 2) );
                 	}
                 	else
                 	{
-                    	mDistance = Integer.toString( (int)Math.sqrt( Math.pow( ( lX ), 2) + Math.pow( ( lY ), 2) ) );
+                    	mDistance = (int)Math.sqrt( Math.pow( ( lX ), 2) + Math.pow( ( lY ), 2) );
                 	}
-//                	mDistance = Integer.toString( (int)Math.sqrt( Math.pow( ( mCX - mPX ), 2) ) ) + "/" + Integer.toString( (int)Math.sqrt( Math.pow( ( mCY - mPY ), 2) ) );
-                	return mDistance;
+                	return Integer.toString( mDistance );
                 }
             }
             return "Test2";
@@ -246,32 +261,37 @@ public class CreatureWindow extends WWindow
             {
                 case -2: 
                 {
-                	return this.mName.compareToIgnoreCase( pOther.mName );
+                	String lTmp = this.mName + this.mCondition;
+                	String lTest = pOther.mName + pOther.mCondition;
+                	return lTmp.compareToIgnoreCase( lTest );
                 }
                 case -1: 
                 {
-                	return Long.toString( this.mId ).compareToIgnoreCase( Long.toString( pOther.mId ) );
-                    
+                	return Long.toString( this.mId ).compareToIgnoreCase( Long.toString( pOther.mId ) );  
                 }
-                case 0: 
+                case 0:
                 {
-                	return this.mAge.compareToIgnoreCase( pOther.mAge );
+                	return this.mCondition.compareToIgnoreCase( pOther.mCondition );
                 }
                 case 1: 
                 {
-                	return this.mGender.compareToIgnoreCase( pOther.mGender );
+                	return this.mAge.compareToIgnoreCase( pOther.mAge );
                 }
                 case 2: 
                 {
-                	return this.mColor.compareToIgnoreCase( pOther.mColor );
+                	return this.mGender.compareToIgnoreCase( pOther.mGender );
                 }
                 case 3: 
                 {
-                	return this.mDirection.compareToIgnoreCase( pOther.mDirection );
+                	return this.mColorString.compareToIgnoreCase( pOther.mColorString );
                 }
                 case 4: 
                 {
-                	return Integer.compare( Integer.parseInt( this.mDistance ), Integer.parseInt( pOther.mDistance ) );
+                	return this.mDirection.compareToIgnoreCase( pOther.mDirection );
+                }
+                case 5: 
+                {
+                	return Integer.compare( this.mDistance, pOther.mDistance );
                 }
             }
             return 0;
@@ -308,9 +328,6 @@ public class CreatureWindow extends WWindow
     {
     	LocalCreatureTreeListItem lCreature = mList.getSelections().get( 0 );
     	mTargetWindow.setTarget( new Long( lCreature.getId() ), "Test", lCreature.mCCR );
-
-		mWorld.getWorldRenderer().toggleFreeCamera();
-		mWorld.getWorldRenderer().toggleDebugLight();
     }
     
 	public void removeEntry( long pListId )
@@ -335,8 +352,12 @@ public class CreatureWindow extends WWindow
 	
 	public void getCreatures()
 	{
-		mCreatures = mWorld.getServerConnection().getServerConnectionListener().getCreatures();
-		
+		mCreatures = mWorld.getServerConnection().getServerConnectionListener().getCreatures();		
 		logger.log(Level.INFO, "DEBUG number of creatures:" + mCreatures.size() );
+	}
+	
+	public void setColoredText( boolean pColored )
+	{
+		mColoredText = pColored;
 	}
 }

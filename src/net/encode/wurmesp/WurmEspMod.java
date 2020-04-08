@@ -362,19 +362,8 @@ public class WurmEspMod implements WurmClientMod, Initable, PreInitable, Configu
 								}
 								if ( unit.isMob() )
 								{
-//						    		logger.log(Level.INFO, "DEBUG CALL UNIT:" + unit.getId());
-									mCreatureWindow.addToLocalCreatureList( unit.getId() , unit.getCreature(), unit.getAge(), unit.getGender(), unit.getColorName(), (int)unit.getX(), (int)unit.getY(), (int)world.getPlayer().getPos().getTileX(), (int)world.getPlayer().getPos().getTileY(), unit.getCCR() );									
-								}
-								else if ( unit.isPlayer() )
-								{
-//									if ( unit.getHoverName().contains( "Sumsum" ) )
-//									{
-//										long lE = 2757842558976L;
-//										logger.log(Level.INFO, "DEBUG ElfinX:" + lE );
-//										logger.log(Level.INFO, "DEBUG ElfinX:" + world.getServerConnection().getServerConnectionListener().findCreature(unit.getId()).getXPos() );
-//										logger.log(Level.INFO, "DEBUG ElfinY:" + world.getServerConnection().getServerConnectionListener().findCreature(unit.getId()).getYPos() );
-//										world.getWorldRenderer().toggleFreeCamera();
-//									}
+									mCreatureWindow.addToLocalCreatureList( unit.getId() , unit.getCreature(), unit.getAge(), unit.getGender(), unit.getColorName(), (int)unit.getX(), (int)unit.getY(), (int)world.getPlayer().getPos().getTileX(), 
+											(int)world.getPlayer().getPos().getTileY(), unit.getCCR(), unit.getCol(), unit.getCondition() );									
 								}
 							}
 						}
@@ -917,8 +906,7 @@ public class WurmEspMod implements WurmClientMod, Initable, PreInitable, Configu
 		else
 		{
 			XrayColors.addMapping(Tiles.Tile.TILE_CAVE_WALL_ROCKSALT, Color.WHITE.darker());
-		}
-		
+		}		
 
 		Unit.aggroMOBS = properties.getProperty("aggroMOBS").split(";");
 		Unit.uniqueMOBS = properties.getProperty("uniqueMOBS").split(";");
